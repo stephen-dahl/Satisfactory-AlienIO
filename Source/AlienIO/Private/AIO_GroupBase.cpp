@@ -8,11 +8,13 @@ void AAIO_GroupBase::BeginPlay() {
 	Super::BeginPlay();
 	const auto Delay = FMath::FRandRange(.0f, 1.0f);
 	GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &AAIO_GroupBase::RunAioTick, 1.0f, true, Delay);
+	UE_LOG(LogAlienIO, Verbose, TEXT("%s created with delay %f"), *GetName(), Delay);
 }
 
 void AAIO_GroupBase::EndPlay(const EEndPlayReason::Type EndPlayReason) {
 	Super::EndPlay(EndPlayReason);
 	GetWorld()->GetTimerManager().ClearTimer(TimerHandle);
+	UE_LOG(LogAlienIO, Verbose, TEXT("%s destroyed"), *GetName());
 }
 
 void AAIO_GroupBase::RunAioTick() {
@@ -20,30 +22,48 @@ void AAIO_GroupBase::RunAioTick() {
 	UE_LOG(LogAlienIO, Verbose, TEXT("Ticking AlienIO subsystem with %d members in group %s"), Num, *GetName());
 	if (Num == 0) return;
 	ParallelFor(Num, [this](int32 Index) {
-		if (Members[Index].IsValid()) Members[Index]->AioTickPre();
+		if (IsValid(Members[Index])) Members[Index]->AioTickPre();
 	});
 	ParallelFor(Num, [this](const int32 Index) {
-		if (Members[Index].IsValid()) Members[Index]->AioTick();
+		if (IsValid(Members[Index])) Members[Index]->AioTick();
 	});
 }
 
 void AAIO_GroupBase::AddMember(UAIO_ComponentBase* Component) {
-	Members.Add(Component);
-	UE_LOG(LogAlienIO, Type::Log, TEXT("%s Joined group %s with %d members"), *Component->GetName(), *GetName(),
-	       Members.Num());
+	if (!IsValid(Component)) {
+		UE_LOG(LogAlienIO, Type::Error, TEXT("Invalid component provided"));
+		return;
+	}
+	Members.AddUnique(Component);
+	auto GroupName = GetName();
+	auto ComponentName = Component->GetName();
+	auto Num = Members.Num();
+	UE_LOG(LogAlienIO, Type::Log, TEXT("%s Joined group %s with %d members"), *ComponentName, *GroupName, Num);
 }
 
 void AAIO_GroupBase::RemoveMember(UAIO_ComponentBase* Component) {
+	if (!IsValid(Component)) {
+		UE_LOG(LogAlienIO, Type::Error, TEXT("Invalid component provided"));
+		return;
+	}
 	Members.Remove(Component);
-	const auto Num = Members.Num();
-	UE_LOG(LogAlienIO, Type::Log, TEXT("%s Left group %s with %d members"), *Component->GetName(), *GetName(), Num);
+	auto GroupName = GetName();
+	auto ComponentName = Component->GetName();
+	auto Num = Members.Num();
+	UE_LOG(LogAlienIO, Type::Log, TEXT("%s Left group %s with %d members left"), *ComponentName, *GroupName, Num);
 	if (Num == 0) Destroy();
 }
 
 void AAIO_GroupBase::MergeGroup(AAIO_GroupBase* Other) {
 	if (!IsValid(Other)) return;
-	for (const auto& Member : Other->Members)
+	while (Other->Members.Num() > 0) {
+		auto Member = Other->Members.Pop(false);
+		if(!IsValid(Member)) {
+			UE_LOG(LogAlienIO, Type::Error, TEXT("Invalid member found in group"));
+			continue;
+		}
 		Member->JoinGroup(this);
+	}
 }
 
 void AAIO_GroupBase::AddIngredientProvider(TSubclassOf<class UFGItemDescriptor> Item, UAIO_ComponentBase* Component) {

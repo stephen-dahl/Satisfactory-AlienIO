@@ -3,6 +3,7 @@
 #include "AlienIO.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Components/BoxComponent.h"
+#include "Engine/StaticMeshActor.h"
 
 
 UAIO_ComponentBase::UAIO_ComponentBase() {
@@ -108,12 +109,12 @@ void UAIO_ComponentBase::OnRecipeChanged(const TSubclassOf<UFGRecipe> Recipe) {
 
 void UAIO_ComponentBase::JoinGroup(AAIO_GroupBase* NewGroup) {
 	LeaveGroup();
-	Group = MakeShareable(NewGroup);
+	Group = NewGroup;
 	Group->AddMember(this);
 }
 
 void UAIO_ComponentBase::LeaveGroup() {
-	if (!Group.IsValid()) return;
+	if (!IsValid(Group)) return;
 	for (const auto& MinItemAmount : MinItemAmounts)
 		Group->RemoveIngredientProvider(MinItemAmount.Key, this);
 	for (const auto& Product : Products)
@@ -122,33 +123,40 @@ void UAIO_ComponentBase::LeaveGroup() {
 }
 
 void UAIO_ComponentBase::GroupWithNeighbors() {
-	JoinGroup(NewObject<AAIO_GroupBase>());
 	auto Clearance = Owner->GetCombinedClearanceBox();
 	TArray<AActor*> OverlapResults;
-	FCollisionQueryParams CollisionParams;
-	FCollisionObjectQueryParams ObjectParams;
-	CollisionParams.AddIgnoredActor(Owner);
-	FCollisionResponseParams ResponseParams;
 
-	//currently working on this...
-	UKismetSystemLibrary::BoxOverlapActors(
-		GetWorld(),
-		Clearance.GetCenter(),
-		Clearance.GetExtent(),
-		{UEngineTypes::ConvertToObjectType(ECC_WorldDynamic)},
-		AFGBuildableManufacturer::StaticClass(),
-		{Owner},
-		OverlapResults
-	);
+	// auto Position = Owner->GetActorLocation() + Clearance.GetCenter();
+	// auto Extents = (Clearance.GetExtent());
+	// DrawDebugBox(Owner, Clearance.GetCenter(), (Extents * 2) + 200);
+	// DrawDebugBox(Owner, Clearance.GetCenter(), (Extents * 2));
 
+	auto Box = Cast<UBoxComponent>(Owner->AddComponentByClass(
+		UBoxComponent::StaticClass(), false,
+		FTransform(FRotator::ZeroRotator, Clearance.GetCenter()), false
+	));
+	
+	Box->SetBoxExtent(Clearance.GetExtent() + 200);
+	Box->GetOverlappingActors(OverlapResults, AFGBuildableManufacturer::StaticClass());
+	Box->DestroyComponent();
 
-	UE_LOG(LogAlienIO, Type::Log, TEXT("Found %d neighbors"), OverlapResults.Num());
+	UE_LOG(LogAlienIO, Type::Log, TEXT("Found %d neighbors"), OverlapResults.Num() - 1);
 
 	for (const auto& Result : OverlapResults) {
-		if (auto* Actor = Cast<AFGBuildableManufacturer>(Result)) {
-			if (auto* Component = Actor->FindComponentByClass<UAIO_ComponentBase>()) {
-				Component->Group->MergeGroup(Group.Get());
-			}
+		if (Result == Owner) continue;
+		auto Actor = Cast<AFGBuildableManufacturer>(Result);
+		if (!IsValid(Actor)) {
+			UE_LOG(LogAlienIO, Type::Log, TEXT("Invalid actor found"));
+			continue;
 		}
+		auto* Component = Actor->FindComponentByClass<UAIO_ComponentBase>();
+		if (!IsValid(Component)) {
+			UE_LOG(LogAlienIO, Type::Log, TEXT("Invalid component found"));
+			continue;
+		}
+		if (Group == Component->Group) continue;
+		if (IsValid(Group) && IsValid(Component->Group)) Component->Group->MergeGroup(Group);
+		else if (IsValid(Component->Group)) JoinGroup(Component->Group);
 	}
+	if(!IsValid(Group)) JoinGroup(NewObject<AAIO_GroupBase>());
 }

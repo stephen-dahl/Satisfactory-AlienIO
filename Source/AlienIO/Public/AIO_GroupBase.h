@@ -23,11 +23,10 @@ protected:
 	UE::FSpinLock IngredientProvidersLock;
 	UE::FSpinLock ProductOutputLock;
 	/** Map of item providers, where each item type is associated with a list of components and an index. */
-	TMap<TSubclassOf<class UFGItemDescriptor>, TPair<TArray<TWeakObjectPtr<UAIO_ComponentBase>>, int32>>
-	IngredientProviders;
-	TMap<TSubclassOf<class UFGItemDescriptor>, TPair<TArray<TWeakObjectPtr<UAIO_ComponentBase>>, int32>> ProductOutputs;
+	TMap<TSubclassOf<class UFGItemDescriptor>, TPair<TArray<TObjectPtr<UAIO_ComponentBase>>, int32>> IngredientProviders;
+	TMap<TSubclassOf<class UFGItemDescriptor>, TPair<TArray<TObjectPtr<UAIO_ComponentBase>>, int32>> ProductOutputs;
 	UPROPERTY()
-	TArray<TWeakObjectPtr<UAIO_ComponentBase>> Members;
+	TArray<TObjectPtr<UAIO_ComponentBase>> Members;
 	UPROPERTY()
 	FTimerHandle TimerHandle;
 

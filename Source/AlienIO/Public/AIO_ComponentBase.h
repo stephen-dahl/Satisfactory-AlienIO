@@ -19,7 +19,7 @@ class ALIENIO_API UAIO_ComponentBase : public UActorComponent {
 protected:
 	UPROPERTY(BlueprintReadWrite)
 	TObjectPtr<AFGBuildableManufacturer> Owner;
-	TSharedPtr<AAIO_GroupBase> Group;
+	TObjectPtr<AAIO_GroupBase> Group;
 	UPROPERTY()
 	TArray<TSoftObjectPtr<UFGFactoryConnectionComponent>> Outputs;
 	UPROPERTY()
@@ -61,4 +61,7 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "Item Configuration")
 	void OnRecipeChanged(const TSubclassOf<UFGRecipe> Recipe);
 	void GroupWithNeighbors();
+
+	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent)
+	void DrawDebugBox(AActor* Actor, FVector Location, FVector Size);
 };
