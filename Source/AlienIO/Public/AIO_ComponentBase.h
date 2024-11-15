@@ -10,7 +10,7 @@
 #include "Async/ParallelFor.h"
 #include "AIO_ComponentBase.generated.h"
 
-class AAIO_GroupBase;
+class AAIO_Group;
 
 UCLASS(Blueprintable, BlueprintType, ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class ALIENIO_API UAIO_ComponentBase : public UActorComponent {
@@ -19,7 +19,7 @@ class ALIENIO_API UAIO_ComponentBase : public UActorComponent {
 protected:
 	UPROPERTY(BlueprintReadWrite)
 	TObjectPtr<AFGBuildableManufacturer> Owner;
-	TObjectPtr<AAIO_GroupBase> Group;
+	TObjectPtr<AAIO_Group> Group;
 	UPROPERTY()
 	TArray<TSoftObjectPtr<UFGFactoryConnectionComponent>> Outputs;
 	UPROPERTY()
@@ -31,19 +31,13 @@ protected:
 	TSoftObjectPtr<UFGInventoryComponent> OutputInventory;
 	UPROPERTY()
 	TArray<TSubclassOf<UFGItemDescriptor>> Products = {};
-	UPROPERTY()
-	bool bBeltConnected = false;
-	UPROPERTY()
-	bool bPipeConnected = false;
 
 public:
-	UAIO_ComponentBase();
-
 	void AioTickPre();
 	void AioTick();
 
 	UFUNCTION(BlueprintCallable, Category = "Group")
-	void JoinGroup(AAIO_GroupBase* NewGroup);
+	void JoinGroup(AAIO_Group* NewGroup);
 
 	UFUNCTION(BlueprintCallable, Category = "Group")
 	void LeaveGroup();
