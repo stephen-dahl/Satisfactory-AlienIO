@@ -17,6 +17,7 @@ void UAIO_ComponentBase::BeginPlay() {
 	}
 	GroupWithNeighbors();
 	OnRecipeChanged(Owner->GetCurrentRecipe());
+	// this error is a rider issue. it compiles and runs fine
 	Owner->mCurrentRecipeChanged.AddDynamic(this, &UAIO_ComponentBase::OnRecipeChanged);
 }
 

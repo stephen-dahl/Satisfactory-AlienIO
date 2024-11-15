@@ -17,7 +17,6 @@ void AAIO_Group::EndPlay(const EEndPlayReason::Type EndPlayReason) {
 
 void AAIO_Group::RunAioTick() {
 	const auto Num = Members.Num();
-	UE_LOG(LogAlienIO, Verbose, TEXT("Ticking AlienIO subsystem with %d members in group %s"), Num, *GetName());
 	if (Num == 0) {
 		return;
 	}
@@ -29,7 +28,7 @@ void AAIO_Group::RunAioTick() {
 				Members[Index]->AioTickPre();
 			}
 		}
-	}, true);
+	}, false);
 	ParallelFor(8, [this, Num](int32 ThreadIndex) {
 		int32 StartIndex = (Num * ThreadIndex) / 8;
 		int32 EndIndex = (Num * (ThreadIndex + 1)) / 8;
@@ -38,7 +37,7 @@ void AAIO_Group::RunAioTick() {
 				Members[Index]->AioTick();
 			}
 		}
-	}, true);
+	}, false);
 }
 
 void AAIO_Group::AddMember(UAIO_ComponentBase* Component) {
@@ -99,9 +98,6 @@ void AAIO_Group::RemoveProvider(TSubclassOf<class UFGItemDescriptor> Item,
 		return;
 	}
 	Pair->Key.Remove(Component);
-	if (Pair->Key.Num() == 0) {
-		IngredientProviders.Remove(Item);
-	}
 }
 
 int32 AAIO_Group::PullItem(TSubclassOf<class UFGItemDescriptor> Item, int32 Count) {
@@ -116,7 +112,7 @@ int32 AAIO_Group::PullItem(TSubclassOf<class UFGItemDescriptor> Item, int32 Coun
 	while (RemainingCount > 0 && --i >= 0) {
 		const auto Provider = GetNextProvider(Item);
 		if (Provider == nullptr) {
-			break;
+			continue;
 		}
 		RemainingCount -= Provider->RemoveItem(Item, RemainingCount);
 	}
@@ -125,11 +121,14 @@ int32 AAIO_Group::PullItem(TSubclassOf<class UFGItemDescriptor> Item, int32 Coun
 
 UAIO_ComponentBase* AAIO_Group::GetNextProvider(TSubclassOf<class UFGItemDescriptor> Item) {
 	UE::TScopeLock Lock(IngredientProvidersLock);
-	auto Providers = IngredientProviders.FindRef(Item);
-	const auto Num = Providers.Key.Num();
-	Providers.Value++;
-	if (Providers.Value >= Num) {
-		Providers.Value = 0;
+	auto Providers = IngredientProviders.Find(Item);
+	if (Providers == nullptr) {
+		return nullptr;
 	}
-	return Providers.Key[Providers.Value].Get();
+	const auto Num = Providers->Key.Num();
+	Providers->Value++;
+	if (Providers->Value >= Num) {
+		Providers->Value = 0;
+	}
+	return Providers->Key[Providers->Value];
 }
