@@ -17,7 +17,7 @@ void UAIO_ComponentBase::BeginPlay() {
 	}
 	GroupWithNeighbors();
 	OnRecipeChanged(Owner->GetCurrentRecipe());
-	Owner->.AddDynamic(this, &UAIO_ComponentBase::OnRecipeChanged);
+	Owner->mCurrentRecipeChanged.AddDynamic(this, &UAIO_ComponentBase::OnRecipeChanged);
 }
 
 void UAIO_ComponentBase::EndPlay(const EEndPlayReason::Type EndPlayReason) {
