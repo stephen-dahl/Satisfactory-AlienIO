@@ -29,7 +29,7 @@ void UAIO_ComponentBase::EndPlay(const EEndPlayReason::Type EndPlayReason) {
 void UAIO_ComponentBase::AioTickPre() {
 	// update provided ingredients
 	for (const auto& MinItemAmount : MinItemAmounts) {
-		auto Need = std::min(MinItemAmount.Value * 2, UFGItemDescriptor::GetStackSize(MinItemAmount.Key));
+		auto Need = std::min(MinItemAmount.Value * 3, UFGItemDescriptor::GetStackSize(MinItemAmount.Key));
 		if (InputInventory->GetNumItems(MinItemAmount.Key) > Need) {
 			Group->AddProvider(MinItemAmount.Key, this);
 		}
@@ -64,7 +64,7 @@ void UAIO_ComponentBase::AioTick() {
 		if (Taken == 0) {
 			return;
 		}
-		InputInventory->AddStack(FInventoryStack(Taken, MinItemAmount.Key));
+		AddItem(MinItemAmount.Key, Taken);
 	}
 
 	// update output connections
@@ -91,13 +91,15 @@ void UAIO_ComponentBase::AioTick() {
 		auto Have = OutputInventory->GetNumItems(Product);
 		auto CanFit = UFGItemDescriptor::GetStackSize(Product) - Have;
 		auto Got = Group->PullItem(Product, CanFit);
-		OutputInventory->AddStack(FInventoryStack(Got, Product));
+		AddItem(Product, Got);
 	}
 }
 
 int32 UAIO_ComponentBase::AddItem(TSubclassOf<class UFGItemDescriptor> Item, int32 Amount) {
 	UE::TScopeLock Lock(InventoryLock);
-	return Owner->GetPotentialInventory()->AddStack(FInventoryStack(Amount, Item), true);
+	const auto IsProduct = Products.Contains(Item);
+	const auto Inventory = IsProduct ? OutputInventory : InputInventory;
+	return Inventory->AddStack(FInventoryStack(Amount, Item), true);
 }
 
 int32 UAIO_ComponentBase::RemoveItem(TSubclassOf<class UFGItemDescriptor> Item, int32 Amount) {
