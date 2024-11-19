@@ -69,13 +69,9 @@ void UAIO_ComponentBase::AioTick() {
 		}
 		const auto CanFit = UFGItemDescriptor::GetStackSize(MinItemAmount.Key) - Have;
 		const auto Take = std::min(MinItemAmount.Value, CanFit);
-		if (Take == 0) {
-			return;
-		}
-		const auto Taken = Group->PullItem(MinItemAmount.Key, Take);
-		if (Taken == 0) {
-			return;
-		}
+		if (Take <= 0) { continue; }
+		const auto Taken = Group->PullItem(MinItemAmount.Key, Take, false);
+		if (Taken == 0) { continue; }
 		AddItem(MinItemAmount.Key, Taken);
 	}
 
@@ -88,7 +84,7 @@ void UAIO_ComponentBase::AioTick() {
 		}
 		auto Have = OutputInventory->GetNumItems(Product);
 		auto CanFit = UFGItemDescriptor::GetStackSize(Product) - Have;
-		auto Got = Group->PullItem(Product, CanFit);
+		auto Got = Group->PullItem(Product, CanFit, true);
 		AddItem(Product, Got);
 	}
 }
