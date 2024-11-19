@@ -111,7 +111,7 @@ int32 AAIO_Group::PullItem(TSubclassOf<class UFGItemDescriptor> Item, int32 Coun
 	}
 	while (RemainingCount > 0 && --i >= 0) {
 		const auto Provider = GetNextProvider(Item);
-		if (Provider == nullptr) {
+		if (Provider == nullptr || Provider->IsOutput()) {
 			continue;
 		}
 		RemainingCount -= Provider->RemoveItem(Item, RemainingCount);

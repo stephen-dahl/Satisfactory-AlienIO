@@ -46,6 +46,18 @@ void UAIO_ComponentBase::AioTickPre() {
 			Group->RemoveProvider(Product, this);
 		}
 	}
+
+	// update output connections
+	for (const auto& Output : Outputs) {
+		if (Output->IsConnected()) {
+			if (const auto Type = Output->GetConnector(); Type == EFactoryConnectionConnector::FCC_CONVEYOR) {
+				bBeltConnected = true;
+			}
+			else if (Type == EFactoryConnectionConnector::FCC_PIPE) {
+				bPipeConnected = true;
+			}
+		}
+	}
 }
 
 void UAIO_ComponentBase::AioTick() {
@@ -65,20 +77,6 @@ void UAIO_ComponentBase::AioTick() {
 			return;
 		}
 		AddItem(MinItemAmount.Key, Taken);
-	}
-
-	// update output connections
-	auto bBeltConnected = false;
-	auto bPipeConnected = false;
-	for (const auto& Output : Outputs) {
-		if (Output->IsConnected()) {
-			if (const auto Type = Output->GetConnector(); Type == EFactoryConnectionConnector::FCC_CONVEYOR) {
-				bBeltConnected = true;
-			}
-			else if (Type == EFactoryConnectionConnector::FCC_PIPE) {
-				bPipeConnected = true;
-			}
-		}
 	}
 
 	// Pull Outputs

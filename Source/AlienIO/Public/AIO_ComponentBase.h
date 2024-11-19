@@ -31,6 +31,10 @@ protected:
 	TSoftObjectPtr<UFGInventoryComponent> OutputInventory;
 	UPROPERTY()
 	TArray<TSubclassOf<UFGItemDescriptor>> Products = {};
+	UPROPERTY()
+	bool bBeltConnected;
+	UPROPERTY()
+	bool bPipeConnected;
 
 public:
 	void AioTickPre();
@@ -47,6 +51,10 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Ingredient")
 	int32 RemoveItem(TSubclassOf<class UFGItemDescriptor> Item, int32 Amount);
+
+	bool IsOutput() const {
+		return bBeltConnected || bPipeConnected;
+	}
 
 protected:
 	virtual void BeginPlay() override;
