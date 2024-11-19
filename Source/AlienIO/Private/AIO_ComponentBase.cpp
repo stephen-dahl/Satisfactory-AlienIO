@@ -83,7 +83,7 @@ void UAIO_ComponentBase::AioTick() {
 	for (const auto& Product : Products) {
 		const auto Form = UFGItemDescriptor::GetForm(Product);
 		if (!(bBeltConnected && Form == EResourceForm::RF_SOLID)
-			&& !(bPipeConnected && Form == EResourceForm::RF_LIQUID)) {
+			&& !(bPipeConnected && (Form == EResourceForm::RF_LIQUID || Form == EResourceForm::RF_GAS))) {
 			continue;
 		}
 		auto Have = OutputInventory->GetNumItems(Product);
